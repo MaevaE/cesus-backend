@@ -9,6 +9,7 @@ const { authenticate, authorize } = require('../../middleware/Auth.middleware');
 router.use(authenticate);
 router.use(authorize('ADMIN', 'SUPERVISEUR'));
 
+router.get('/', statsController.getDashboard);
 router.get('/dashboard', statsController.getDashboard);
 router.get('/agents', statsController.getAgentsProgress);
 router.get('/zones/:zoneId', statsController.getByZone);

@@ -7,6 +7,30 @@ const { AppError, Errors } = require('../../utils/AppError');
 
 class AgentService {
   /**
+   * Liste les agents avec leurs compteurs de progression.
+   * @returns {Promise<Array>} Agents et progression de collecte.
+   */
+  async listWithProgress() {
+    const agents = await prisma.agent.findMany({
+      include: {
+        user: { select: { id: true, nom: true, prenom: true, email: true, telephone: true, actif: true } },
+        zone: true,
+        _count: { select: { menagesRecenses: true } },
+      },
+      orderBy: { derniereActivite: 'desc' },
+    });
+
+    return agents.map((agent) => ({
+      ...agent,
+      progression: {
+        menagesRecenses: agent._count.menagesRecenses,
+        objectif: 100,
+        pourcentage: Math.min(100, Math.round((agent._count.menagesRecenses / 100) * 100)),
+      },
+    }));
+  }
+
+  /**
    * Recupere le profil agent associe a l'utilisateur connecte.
    * @param {object} user - Utilisateur authentifie.
    * @returns {Promise<object>} Agent avec zone et compteurs.

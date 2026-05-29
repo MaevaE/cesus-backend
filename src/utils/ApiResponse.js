@@ -44,7 +44,16 @@ class ApiResponse {
    * Réponse erreur
    */
   static error(res, message = 'Erreur', statusCode = 500, code = 'ERROR', details = null) {
-    const response = { success: false, message, code };
+    const response = {
+      success: false,
+      message,
+      error: {
+        code,
+        details,
+      },
+      // Champs conserves pour retrocompatibilite avec les tests et clients existants.
+      code,
+    };
     if (details) response.details = details;
     return res.status(statusCode).json(response);
   }

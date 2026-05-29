@@ -7,6 +7,16 @@ const ApiResponse = require('../../utils/ApiResponse');
 
 class AgentController {
   /**
+   * GET /api/v1/agents - liste les agents avec leur progression.
+   */
+  async list(req, res, next) {
+    try {
+      const agents = await agentService.listWithProgress();
+      return ApiResponse.success(res, agents, 'Agents recuperes');
+    } catch (error) { next(error); }
+  }
+
+  /**
    * GET /api/v1/agents/me - profil agent connecte.
    */
   async me(req, res, next) {

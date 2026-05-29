@@ -3,6 +3,7 @@
 // ============================================
 const menageService = require('./menage.service');
 const ApiResponse = require('../../utils/ApiResponse');
+const { logAction } = require('../../utils/auditLog');
 
 class MenageController {
   async getAll(req, res, next) {
@@ -22,6 +23,13 @@ class MenageController {
   async create(req, res, next) {
     try {
       const menage = await menageService.create(req.body, req.user);
+      await logAction({
+        action: 'MENAGE_CREATE',
+        entite: 'menages',
+        entiteId: menage.id,
+        req,
+        details: { codeUnique: menage.codeUnique, zoneId: menage.zoneId },
+      });
       return ApiResponse.created(res, menage, 'Ménage enregistré');
     } catch (e) { next(e); }
   }
@@ -29,13 +37,21 @@ class MenageController {
   async update(req, res, next) {
     try {
       const menage = await menageService.update(req.params.id, req.body, req.user);
+      await logAction({
+        action: 'MENAGE_UPDATE',
+        entite: 'menages',
+        entiteId: menage.id,
+        req,
+        details: { champs: Object.keys(req.body) },
+      });
       return ApiResponse.success(res, menage, 'Ménage mis à jour');
     } catch (e) { next(e); }
   }
 
   async delete(req, res, next) {
     try {
-      await menageService.delete(req.params.id);
+      await menageService.delete(req.params.id, req.user);
+      await logAction({ action: 'MENAGE_DELETE', entite: 'menages', entiteId: req.params.id, req });
       return ApiResponse.success(res, null, 'Ménage supprimé');
     } catch (e) { next(e); }
   }

@@ -4,6 +4,7 @@
 // ============================================
 const individuService = require('./individu.service');
 const ApiResponse = require('../../utils/ApiResponse');
+const { logAction } = require('../../utils/auditLog');
 
 class IndividuController {
   /**
@@ -46,6 +47,13 @@ class IndividuController {
   async create(req, res, next) {
     try {
       const individu = await individuService.create(req.params.menageId, req.body, req.user);
+      await logAction({
+        action: 'INDIVIDU_CREATE',
+        entite: 'individus',
+        entiteId: individu.id,
+        req,
+        details: { menageId: individu.menageId },
+      });
       return ApiResponse.created(res, individu, 'Individu ajoute');
     } catch (e) { next(e); }
   }
@@ -56,6 +64,13 @@ class IndividuController {
   async update(req, res, next) {
     try {
       const individu = await individuService.update(req.params.id, req.body, req.user);
+      await logAction({
+        action: 'INDIVIDU_UPDATE',
+        entite: 'individus',
+        entiteId: individu.id,
+        req,
+        details: { champs: Object.keys(req.body) },
+      });
       return ApiResponse.success(res, individu, 'Individu mis a jour');
     } catch (e) { next(e); }
   }
@@ -66,6 +81,7 @@ class IndividuController {
   async delete(req, res, next) {
     try {
       await individuService.delete(req.params.id, req.user);
+      await logAction({ action: 'INDIVIDU_DELETE', entite: 'individus', entiteId: req.params.id, req });
       return ApiResponse.success(res, null, 'Individu supprime');
     } catch (e) { next(e); }
   }

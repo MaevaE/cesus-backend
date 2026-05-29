@@ -22,6 +22,7 @@ router.post('/', authorize('ADMIN'), validate(createZoneSchema), zoneController.
 
 // PATCH /api/v1/zones/:id - modification d'une zone, reservee a l'administrateur.
 router.patch('/:id', authorize('ADMIN'), validate(updateZoneSchema), zoneController.update);
+router.put('/:id', authorize('ADMIN'), validate(updateZoneSchema), zoneController.update);
 
 // DELETE /api/v1/zones/:id - suppression logique d'une zone, reservee a l'administrateur.
 router.delete('/:id', authorize('ADMIN'), zoneController.delete);

@@ -143,8 +143,8 @@ class MenageService {
    * @param {string} id - Identifiant du menage.
    * @returns {Promise<object>} Menage supprime.
    */
-  async delete(id) {
-    await this.getById(id);
+  async delete(id, user = null) {
+    await this.getById(id, user);
     return menageRepository.softDelete(id);
   }
 }

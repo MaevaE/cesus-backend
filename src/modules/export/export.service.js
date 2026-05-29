@@ -7,6 +7,28 @@ const { prisma } = require('../../config/database');
 
 class ExportService {
   /**
+   * Exporte un jeu de donnees simple en JSON ou CSV pour GET /export.
+   * @param {'menages'|'individus'|'zones'} type - Type de donnees a exporter.
+   * @param {'json'|'csv'} format - Format souhaite.
+   * @param {object} filters - Filtres de requete.
+   * @returns {Promise<object|string>} Donnees JSON ou chaine CSV.
+   */
+  async exportDataset(type = 'menages', format = 'json', filters = {}) {
+    const exporters = {
+      menages: () => this.exportMenages('data', filters),
+      individus: () => this.exportIndividus('data', filters),
+      zones: () => this.exportZones('data', filters),
+    };
+
+    const rows = await (exporters[type] || exporters.menages)();
+    if (format === 'csv') {
+      const ws = XLSX.utils.json_to_sheet(rows);
+      return XLSX.utils.sheet_to_csv(ws);
+    }
+    return rows;
+  }
+
+  /**
    * Exporte les ménages en Excel ou CSV
    * @param {'xlsx'|'csv'} format
    * @param {object} filters - { zoneId, campagneId }
@@ -80,6 +102,36 @@ class ExportService {
 
     return this._generateFile(rows, 'Individus_CESUS', format);
   }
+
+  /**
+   * Exporte les zones en donnees brutes, CSV ou Excel.
+   * @param {'xlsx'|'csv'|'data'} format - Format de sortie.
+   * @param {object} filters - Filtres de recherche.
+   * @returns {Promise<Array|Buffer|string>} Export demande.
+   */
+  async exportZones(format = 'xlsx', filters = {}) {
+    const zones = await prisma.zone.findMany({
+      where: {
+        deletedAt: null,
+        ...(filters.search && { nom: { contains: filters.search, mode: 'insensitive' } }),
+      },
+      include: { _count: { select: { menages: true, agents: true } } },
+      orderBy: { nom: 'asc' },
+    });
+
+    const rows = zones.map((z) => ({
+      Zone: z.nom,
+      Region: z.region || '',
+      Departement: z.departement || '',
+      Menages: z._count.menages,
+      Agents: z._count.agents,
+      Latitude: z.latitude || '',
+      Longitude: z.longitude || '',
+    }));
+
+    return this._generateFile(rows, 'Zones_CESUS', format);
+  }
+
 
   /**
    * Rapport complet multi-feuilles Excel

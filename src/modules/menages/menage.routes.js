@@ -18,6 +18,7 @@ router.get('/', menageController.getAll);
 router.get('/:id', menageController.getById);
 router.post('/', authorize('ADMIN', 'AGENT'), validate(createMenageSchema), menageController.create);
 router.patch('/:id', authorize('ADMIN', 'AGENT'), validate(updateMenageSchema), menageController.update);
-router.delete('/:id', authorize('ADMIN'), menageController.delete);
+router.put('/:id', authorize('ADMIN', 'AGENT'), validate(updateMenageSchema), menageController.update);
+router.delete('/:id', authorize('ADMIN', 'AGENT'), menageController.delete);
 
 module.exports = router;

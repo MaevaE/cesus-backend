@@ -25,8 +25,9 @@ router.get('/:id', individuController.getById);
 
 // PATCH /api/v1/individus/:id - modification directe.
 router.patch('/:id', authorize('ADMIN', 'AGENT'), validate(updateIndividuSchema), individuController.update);
+router.put('/:id', authorize('ADMIN', 'AGENT'), validate(updateIndividuSchema), individuController.update);
 
 // DELETE /api/v1/individus/:id - suppression directe.
-router.delete('/:id', authorize('ADMIN'), individuController.delete);
+router.delete('/:id', authorize('ADMIN', 'AGENT'), individuController.delete);
 
 module.exports = router;

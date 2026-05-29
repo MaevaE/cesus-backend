@@ -49,6 +49,18 @@ Base URL locale :
 http://localhost:5000/api/v1
 ```
 
+Alias compatible MVP :
+
+```text
+http://localhost:5000/api
+```
+
+Documentation Swagger :
+
+```text
+http://localhost:5000/api-docs
+```
+
 Pour Expo Android emulator, le frontend utilise par defaut :
 
 ```text
@@ -115,8 +127,10 @@ Erreur :
 {
   "success": false,
   "message": "Description de l'erreur",
-  "code": "ERROR_CODE",
-  "details": []
+  "error": {
+    "code": "ERROR_CODE",
+    "details": []
+  }
 }
 ```
 
@@ -397,14 +411,33 @@ Reponse :
 
 Reserve admin/superviseur :
 
+- `GET /api/v1/stats`
 - `GET /api/v1/stats/dashboard`
 - `GET /api/v1/stats/agents`
 - `GET /api/v1/stats/zones/:zoneId`
+
+### Campagnes
+
+Reserve admin/superviseur selon l'action :
+
+- `GET /api/v1/campagnes`
+- `GET /api/v1/campagnes/:id`
+- `POST /api/v1/campagnes`
+- `PUT /api/v1/campagnes/:id`
+- `DELETE /api/v1/campagnes/:id`
+
+### Agents
+
+- `GET /api/v1/agents` : liste des agents avec progression, reserve admin/superviseur.
+- `GET /api/v1/agents/me/dashboard` : dashboard de l'agent connecte.
+- `GET /api/v1/agents/me/mission` : mission GPS de l'agent connecte.
 
 ### Export
 
 Reserve admin :
 
+- `GET /api/v1/export?type=menages&format=json`
+- `GET /api/v1/export?type=menages&format=csv`
 - `GET /api/v1/export/menages?format=xlsx`
 - `GET /api/v1/export/menages?format=csv`
 - `GET /api/v1/export/individus?format=xlsx`

@@ -6,8 +6,16 @@ process.env.JWT_REFRESH_EXPIRES_IN = '30d';
 
 const bcrypt = require('bcryptjs');
 
-const agentRole = { id: 'role-agent', nom: 'AGENT', description: 'Agent recenseur' };
-const adminRole = { id: 'role-admin', nom: 'ADMIN', description: 'Administrateur' };
+const agentRole = {
+  id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  nom: 'AGENT',
+  description: 'Agent recenseur',
+};
+const adminRole = {
+  id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+  nom: 'ADMIN',
+  description: 'Administrateur',
+};
 const zone = {
   id: '11111111-1111-4111-8111-111111111111',
   nom: 'Zone A - Centre',
@@ -69,6 +77,7 @@ const menage = {
   zone,
   agent: { ...agent, user: agentUser },
   individus: [],
+  _count: { individus: 1 },
   deletedAt: null,
 };
 
@@ -82,6 +91,17 @@ const individu = {
   niveauEtude: 'SECONDAIRE',
   menageId: menage.id,
   statut: 'SYNCHRONISE',
+  deletedAt: null,
+};
+
+const campagne = {
+  id: '99999999-9999-4999-8999-999999999999',
+  nom: 'Recensement National 2026',
+  description: 'Campagne de test',
+  dateDebut: new Date('2026-01-01'),
+  dateFin: null,
+  statut: 'EN_COURS',
+  zones: [{ id: 'camp-zone-1', zoneId: zone.id, campagneId: '99999999-9999-4999-8999-999999999999', zone }],
   deletedAt: null,
 };
 
@@ -122,13 +142,16 @@ function createPrismaMock() {
       update: jest.fn(async ({ data }) => ({ id: 'refresh-1', ...data })),
       updateMany: jest.fn(async () => ({ count: 1 })),
     },
+    log: {
+      create: jest.fn(async ({ data }) => ({ id: 'log-1', ...data })),
+    },
     agent: {
       findUnique: jest.fn(async ({ where }) => {
         if (where?.userId === agentUser.id || where?.id === agent.id) return agent;
         return null;
       }),
       count: jest.fn(async () => 1),
-      findMany: jest.fn(async () => [agent]),
+      findMany: jest.fn(async () => [{ ...agent, user: agentUser, zone, _count: { menagesRecenses: 2 } }]),
       update: jest.fn(async ({ data }) => ({ ...agent, ...data, user: agentUser, zone })),
     },
     zone: {
@@ -157,6 +180,16 @@ function createPrismaMock() {
       count: jest.fn(async () => 1),
       groupBy: jest.fn(async () => [{ sexe: 'FEMININ', _count: { sexe: 1 } }]),
     },
+    campagne: {
+      findMany: jest.fn(async () => [campagne]),
+      findFirst: jest.fn(async ({ where }) => (where?.id && where.id !== campagne.id ? null : campagne)),
+      create: jest.fn(async ({ data }) => ({ ...campagne, ...data, id: campagne.id })),
+      update: jest.fn(async ({ data }) => ({ ...campagne, ...data })),
+      count: jest.fn(async () => 1),
+    },
+    campagneZone: {
+      deleteMany: jest.fn(async () => ({ count: 1 })),
+    },
     $connect: jest.fn(async () => undefined),
     $disconnect: jest.fn(async () => undefined),
     $on: jest.fn(),
@@ -176,5 +209,6 @@ module.exports = {
   agent,
   menage,
   individu,
+  campagne,
   createPrismaMock,
 };

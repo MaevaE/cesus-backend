@@ -10,11 +10,11 @@ const { validate } = require('../../middleware/validate.middleware');
 const { updateLocationSchema } = require('./agent.validator');
 
 router.use(authenticate);
-router.use(authorize('AGENT', 'ADMIN'));
 
-router.get('/me', agentController.me);
-router.get('/me/dashboard', agentController.dashboard);
-router.get('/me/mission', agentController.mission);
-router.patch('/me/location', validate(updateLocationSchema), agentController.updateLocation);
+router.get('/', authorize('ADMIN', 'SUPERVISEUR'), agentController.list);
+router.get('/me', authorize('AGENT', 'ADMIN'), agentController.me);
+router.get('/me/dashboard', authorize('AGENT', 'ADMIN'), agentController.dashboard);
+router.get('/me/mission', authorize('AGENT', 'ADMIN'), agentController.mission);
+router.patch('/me/location', authorize('AGENT', 'ADMIN'), validate(updateLocationSchema), agentController.updateLocation);
 
 module.exports = router;

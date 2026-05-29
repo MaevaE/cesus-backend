@@ -26,10 +26,12 @@ const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
 const compression = require('compression');
+const swaggerUi = require('swagger-ui-express');
 
 const { generalLimiter } = require('./middleware/ratelimiter.middleware');
 const { errorHandler, notFound } = require('./middleware/error.middleware');
 const logger = require('./config/logger');
+const { buildSwaggerSpec } = require('./config/swagger');
 
 // Import routes
 const authRoutes = require('../src/modules/auth/auth.routes');
@@ -40,9 +42,11 @@ const syncRoutes = require('../src/modules/synchro/sync.routes');
 const statsRoutes = require('../src/modules/stats/stats.routes');
 const exportRoutes = require('../src/modules/export/export.routes');
 const agentRoutes = require('../src/modules/agents/agent.routes');
+const campagneRoutes = require('../src/modules/campagnes/campagne.routes');
 
 const app = express();
 const API = process.env.API_PREFIX || '/api/v1';
+const API_ALIASES = [...new Set([API, '/api'])];
 
 // ─── Sécurité ─────────────────────────────
 app.use(helmet());
@@ -56,7 +60,7 @@ app.use(cors({
     }
     return callback(null, false);
   },
-  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 }));
@@ -89,14 +93,19 @@ app.get('/health', (req, res) => {
 });
 
 // ─── Routes API ───────────────────────────
-app.use(`${API}/auth`, authRoutes);
-app.use(`${API}/zones`, zoneRoutes);
-app.use(`${API}/menages`, menageRoutes);
-app.use(`${API}/individus`, individuRoutes);
-app.use(`${API}/sync`, syncRoutes);
-app.use(`${API}/stats`, statsRoutes);
-app.use(`${API}/export`, exportRoutes);
-app.use(`${API}/agents`, agentRoutes);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(buildSwaggerSpec(), { explorer: true }));
+
+API_ALIASES.forEach((prefix) => {
+  app.use(`${prefix}/auth`, authRoutes);
+  app.use(`${prefix}/zones`, zoneRoutes);
+  app.use(`${prefix}/menages`, menageRoutes);
+  app.use(`${prefix}/individus`, individuRoutes);
+  app.use(`${prefix}/sync`, syncRoutes);
+  app.use(`${prefix}/stats`, statsRoutes);
+  app.use(`${prefix}/export`, exportRoutes);
+  app.use(`${prefix}/agents`, agentRoutes);
+  app.use(`${prefix}/campagnes`, campagneRoutes);
+});
 
 // ─── Gestion des erreurs ──────────────────
 app.use(notFound);
