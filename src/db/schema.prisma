@@ -1,0 +1,225 @@
+// ============================================
+// CESUS – Schéma Prisma complet
+// PostgreSQL | Prisma ORM
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  //url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// RÔLES
+// ─────────────────────────────────────────────
+model Role {
+  id          String   @id @default(uuid())
+  nom         String   @unique // ADMIN | AGENT | SUPERVISEUR
+  description String?
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("roles")
+}
+
+// ─────────────────────────────────────────────
+// UTILISATEURS
+// ─────────────────────────────────────────────
+model User {
+  id            String         @id @default(uuid())
+  nom           String
+  prenom        String
+  email         String         @unique
+  motDePasse    String
+  telephone     String?
+  actif         Boolean        @default(true)
+  roleId        String
+  role          Role           @relation(fields: [roleId], references: [id])
+  agent         Agent?
+  refreshTokens RefreshToken[]
+  logs          Log[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────
+// REFRESH TOKENS
+// ─────────────────────────────────────────────
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("refresh_tokens")
+}
+
+// ─────────────────────────────────────────────
+// ZONES
+// ─────────────────────────────────────────────
+model Zone {
+  id          String    @id @default(uuid())
+  nom         String
+  description String?
+  region      String?
+  departement String?
+  latitude    Float?
+  longitude   Float?
+  actif       Boolean   @default(true)
+  menages     Menage[]
+  agents      Agent[]
+  campagnes   CampagneZone[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@map("zones")
+}
+
+// ─────────────────────────────────────────────
+// CAMPAGNES
+// ─────────────────────────────────────────────
+model Campagne {
+  id          String         @id @default(uuid())
+  nom         String
+  description String?
+  dateDebut   DateTime
+  dateFin     DateTime?
+  statut      StatutCampagne @default(EN_COURS)
+  zones       CampagneZone[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  deletedAt   DateTime?
+
+  @@map("campagnes")
+}
+
+model CampagneZone {
+  id          String   @id @default(uuid())
+  campagneId  String
+  zoneId      String
+  campagne    Campagne @relation(fields: [campagneId], references: [id], onDelete: Cascade)
+  zone        Zone     @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([campagneId, zoneId])
+  @@map("campagne_zones")
+}
+
+enum StatutCampagne {
+  EN_COURS
+  TERMINEE
+  SUSPENDUE
+}
+
+// ─────────────────────────────────────────────
+// AGENTS
+// ─────────────────────────────────────────────
+model Agent {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  zoneId          String?
+  zone            Zone?     @relation(fields: [zoneId], references: [id])
+  menagesRecenses Menage[]
+  latitudeDernier Float?
+  longitudeDernier Float?
+  derniereActivite DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("agents")
+}
+
+// ─────────────────────────────────────────────
+// MÉNAGES
+// ─────────────────────────────────────────────
+model Menage {
+  id              String     @id @default(uuid())
+  codeUnique      String     @unique
+  nomChef         String
+  prenomChef      String
+  adresse         String?
+  latitude        Float?
+  longitude       Float?
+  zoneId          String
+  zone            Zone       @relation(fields: [zoneId], references: [id])
+  agentId         String
+  agent           Agent      @relation(fields: [agentId], references: [id])
+  individus       Individu[]
+  nombreMembres   Int        @default(0)
+  statut          StatutSync @default(LOCAL)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  deletedAt       DateTime?
+
+  @@map("menages")
+}
+
+enum StatutSync {
+  LOCAL
+  SYNCHRONISE
+}
+
+// ─────────────────────────────────────────────
+// INDIVIDUS
+// ─────────────────────────────────────────────
+model Individu {
+  id            String        @id @default(uuid())
+  nom           String
+  prenom        String
+  sexe          Sexe
+  dateNaissance DateTime?
+  age           Int?
+  profession    String?
+  niveauEtude   NiveauEtude?
+  lienChef      String?       // fils, fille, époux, épouse, autre
+  menageId      String
+  menage        Menage        @relation(fields: [menageId], references: [id], onDelete: Cascade)
+  statut        StatutSync    @default(LOCAL)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
+
+  @@map("individus")
+}
+
+enum Sexe {
+  MASCULIN
+  FEMININ
+}
+
+enum NiveauEtude {
+  AUCUN
+  PRIMAIRE
+  SECONDAIRE
+  SUPERIEUR
+  FORMATION_PRO
+}
+
+// ─────────────────────────────────────────────
+// LOGS
+// ─────────────────────────────────────────────
+model Log {
+  id        String   @id @default(uuid())
+  action    String
+  entite    String?
+  entiteId  String?
+  details   Json?
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@map("logs")
+}

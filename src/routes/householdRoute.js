@@ -1,7 +1,7 @@
 import express from "express";
 import {
   createHousehold,
-} from "../controllers/householdController.js";
+} from "./householdController.js";
 
 const router = express.Router();
 
